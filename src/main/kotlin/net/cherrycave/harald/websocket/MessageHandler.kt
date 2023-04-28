@@ -28,6 +28,9 @@ fun handleMessage(message: BaseMessage, proxyServer: ProxyServer) {
                 val registeredServer = proxyServer.allServers.find {
                     it.serverInfo.name == server.name
                 }
+                ChooseInitServerListener.lobbyServer.removeIf {
+                    it.serverInfo.name == server.name
+                }
                 registeredServer?.playersConnected?.forEach {
                     val otherLobby = ChooseInitServerListener.lobbyServer.randomOrNull()
                     if (otherLobby == null) {
