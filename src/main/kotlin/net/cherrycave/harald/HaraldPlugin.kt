@@ -7,17 +7,22 @@ import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
 import com.velocitypowered.api.plugin.Plugin
 import com.velocitypowered.api.plugin.annotation.DataDirectory
 import com.velocitypowered.api.proxy.ProxyServer
+import com.velocitypowered.api.proxy.server.ServerInfo
+import io.ktor.websocket.*
 import kotlinx.coroutines.*
 import net.cherrycave.birgid.GertrudClient
-import net.cherrycave.birgid.closeConnection
-import net.cherrycave.birgid.connect
+import net.cherrycave.birgid.command.ServerType
+import net.cherrycave.birgid.request.getServerRegistrations
 import net.cherrycave.harald.appearance.PlayerListManager
 import net.cherrycave.harald.config.AppearanceConfig
-import net.cherrycave.harald.gertrud.handleSendRequests
+import net.cherrycave.harald.listener.ChooseInitServerListener
 import net.cherrycave.harald.listener.PlayerConnectListener
 import net.cherrycave.harald.listener.ProxyPingListener
+import net.cherrycave.harald.websocket.connectToBackend
+import net.cherrycave.harald.websocket.websocketConnection
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.slf4j.Logger
+import java.net.InetSocketAddress
 import java.nio.file.Path
 
 @Plugin(
@@ -33,39 +38,46 @@ class HaraldPlugin @Inject constructor(
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    private val gertrudClient = GertrudClient {
-        host = "cherrycave-backend.cap.stckoverflw.net"
-        port = 80
-        identifier = "proxy"
-        apiKey = "UKFo@BYKWsG#rcnYzyW^jBVkP53&etky7zan*vMr6A"
+    val gertrudClient = GertrudClient {
+        host = System.getenv("BACKEND_HOST") ?: "localhost"
+        port = System.getenv("BACKEND_PORT")?.toInt() ?: 6969
+        apiKey = System.getenv("BACKEND_API_KEY") ?: error("No API Key provided")
+        identifier = System.getenv("P_SERVER_UUID") ?: "proxy"
+        https = false
     }
 
     init {
         coroutineScope.launch {
-            gertrudClient.connect()
+            connectToBackend(proxyServer = server)
         }
     }
 
     @Subscribe
     fun onInitialize(event: ProxyInitializeEvent) {
         logger.info("Harald is geil!")
-
-//        server.registerServer(ServerInfo("", InetSocketAddress("localhost", 25565)))
+        coroutineScope.launch {
+            gertrudClient.getServerRegistrations().getOrElse { emptyArray() }.forEach {
+                logger.info("Registering server with identifier: ${it.identifier} of type ${it.serverType}")
+                val name = if (it.serverType == ServerType.LOBBY) "lobby-${it.identifier}" else it.identifier
+                val registration = server.registerServer(ServerInfo(name, InetSocketAddress(it.host, it.port)))
+                if (it.serverType == ServerType.LOBBY) {
+                    ChooseInitServerListener.lobbyServer.add(registration)
+                }
+            }
+        }
 
         PlayerListManager.initialize(this, server)
 
         server.eventManager.register(this, ProxyPingListener(miniMessage, AppearanceConfig(dataDirectory)))
         server.eventManager.register(this, PlayerConnectListener())
+        server.eventManager.register(this, ChooseInitServerListener())
 
-        coroutineScope.launch {
-            handleSendRequests(gertrudClient, server)
-        }
     }
 
     @Subscribe
     fun onShutdown(event: ProxyShutdownEvent) {
         runBlocking {
-            gertrudClient.closeConnection()
+            websocketConnection.close(CloseReason(CloseReason.Codes.NORMAL, "Server shutdown"))
         }
     }
 

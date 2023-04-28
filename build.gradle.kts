@@ -29,10 +29,20 @@ dependencies {
 
     compileOnly("net.kyori", "adventure-text-minimessage", "4.13.1")
 
+    val ktorVersion = "2.3.0"
+
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-logging:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
+    implementation("io.ktor:ktor-client-cio:$ktorVersion")
+    implementation("io.ktor:ktor-client-websockets:$ktorVersion")
+
+    implementation("io.github.oshai:kotlin-logging-jvm:4.0.0-beta-22")
+
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.0-RC")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0")
 
-    implementation("net.cherrycave:birgid:0.2.0")
+    implementation("net.cherrycave:birgid:0.3.2")
 }
 
 kotlin {
