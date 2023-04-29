@@ -45,13 +45,20 @@ object PlayerListManager {
             miniMessage.deserialize("<gray>Check out this very cool website:</gray>"),
             miniMessage.deserialize("<blue>stckoverflw.net</blue>"),
             Component.empty()
+        ),
+        Component.join(
+            JoinConfiguration.newlines(),
+            Component.empty(),
+            miniMessage.deserialize("<gray>Join us on Discord:</gray>"),
+            miniMessage.deserialize("<blue>/discord</blue>"),
+            Component.empty()
         )
     )
 
     fun initialize(plugin: HaraldPlugin, proxyServer: ProxyServer) {
         this.proxyServer = proxyServer
 
-        val task = proxyServer.scheduler.buildTask(plugin) {
+        proxyServer.scheduler.buildTask(plugin) {
             proxyServer.allPlayers.forEach {
                 it.sendPlayerListHeaderAndFooter(header, footer)
             }

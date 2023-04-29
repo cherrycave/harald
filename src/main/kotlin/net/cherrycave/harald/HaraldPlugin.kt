@@ -1,6 +1,7 @@
 package net.cherrycave.harald
 
 import com.google.inject.Inject
+import com.velocitypowered.api.command.CommandManager
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
@@ -14,6 +15,7 @@ import net.cherrycave.birgid.GertrudClient
 import net.cherrycave.birgid.command.ServerType
 import net.cherrycave.birgid.request.getServerRegistrations
 import net.cherrycave.harald.appearance.PlayerListManager
+import net.cherrycave.harald.command.discordCommand
 import net.cherrycave.harald.config.AppearanceConfig
 import net.cherrycave.harald.listener.ChooseInitServerListener
 import net.cherrycave.harald.listener.PlayerConnectListener
@@ -25,6 +27,7 @@ import org.slf4j.Logger
 import java.net.InetSocketAddress
 import java.nio.file.Path
 
+
 @Plugin(
     id = "harald", name = "Harald", version = "0.1.0",
     url = "https://cherrycave.net", description = "Harald schaut hier überall drüber", authors = ["StckOverflw"]
@@ -34,7 +37,7 @@ class HaraldPlugin @Inject constructor(
     private val logger: Logger,
     @DataDirectory val dataDirectory: Path
 ) {
-     private val miniMessage = MiniMessage.miniMessage()
+    private val miniMessage = MiniMessage.miniMessage()
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -67,6 +70,15 @@ class HaraldPlugin @Inject constructor(
         }
 
         PlayerListManager.initialize(this, server)
+
+        val commandManager: CommandManager = server.commandManager
+        commandManager.register(
+            commandManager.metaBuilder("discord")
+                .aliases("dc", "community")
+                .plugin(this)
+                .build(),
+            discordCommand()
+        )
 
         server.eventManager.register(this, ProxyPingListener(miniMessage, AppearanceConfig(dataDirectory)))
         server.eventManager.register(this, PlayerConnectListener())
