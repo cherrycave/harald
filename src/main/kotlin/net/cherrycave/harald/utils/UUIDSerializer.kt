@@ -11,7 +11,7 @@ import java.util.UUID
 
 typealias SerializableUUID = @Serializable(with = UUIDSerializer::class) UUID
 
-private class UUIDSerializer : KSerializer<UUID> {
+class UUIDSerializer : KSerializer<UUID> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("UUID", PrimitiveKind.STRING)
 
     override fun serialize(encoder: Encoder, value: UUID) {

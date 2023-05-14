@@ -42,7 +42,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.0-RC")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0")
 
-    implementation("net.cherrycave:birgid:0.3.2")
+    implementation("net.cherrycave:birgid:0.4.1")
 }
 
 kotlin {

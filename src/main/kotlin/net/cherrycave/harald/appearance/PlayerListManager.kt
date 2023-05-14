@@ -5,6 +5,7 @@ import net.cherrycave.harald.HaraldPlugin
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.JoinConfiguration
 import net.kyori.adventure.text.minimessage.MiniMessage
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 
@@ -12,7 +13,9 @@ object PlayerListManager {
 
     private lateinit var proxyServer: ProxyServer
 
-    private val miniMessage = MiniMessage.miniMessage()
+    private val miniMessage = MiniMessage.builder().tags(
+        TagResolver.resolver(TagResolver.standard())
+    ).build()
 
     var header = Component.join(
         JoinConfiguration.newlines(),

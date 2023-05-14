@@ -5,7 +5,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonClassDiscriminator
 import net.cherrycave.harald.utils.SerializableUUID
-import net.cherrycave.harald.websocket.model.ServerType
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
@@ -38,7 +37,7 @@ data class SendRequest(
 @SerialName("register-server-request")
 data class RegisterServerRequest(
     val register: Boolean,
-    val serverType: ServerType,
+    val serverType: String,
     val identifier: String,
     val host: String,
     val port: Int,

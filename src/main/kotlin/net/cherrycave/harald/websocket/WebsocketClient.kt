@@ -11,6 +11,7 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.*
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlin.time.Duration.Companion.seconds
@@ -58,12 +59,18 @@ suspend fun connectToBackend(
                 for (frame in incoming) {
                     when (frame) {
                         is Frame.Text -> {
-                            val message: BaseMessage = json.decodeFromString(
-                                frame.readText()
-                            )
+                            val text = frame.readText()
+
+                            val message: BaseMessage = try {
+                                json.decodeFromString<BaseMessage>(text)
+                            } catch (ex: Exception) {
+                                println("Failed to decode message: ${ex.message}")
+                                continue
+                            }
 
                             when (message.messageType) {
                                 BaseMessage.MessageType.INIT -> {
+                                    println("received message: $message")
                                     handleMessage(message, proxyServer)
                                 }
 

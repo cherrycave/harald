@@ -12,10 +12,10 @@ import com.velocitypowered.api.proxy.server.ServerInfo
 import io.ktor.websocket.*
 import kotlinx.coroutines.*
 import net.cherrycave.birgid.GertrudClient
-import net.cherrycave.birgid.command.ServerType
 import net.cherrycave.birgid.request.getServerRegistrations
 import net.cherrycave.harald.appearance.PlayerListManager
 import net.cherrycave.harald.command.discordCommand
+import net.cherrycave.harald.command.hubCommand
 import net.cherrycave.harald.config.AppearanceConfig
 import net.cherrycave.harald.listener.ChooseInitServerListener
 import net.cherrycave.harald.listener.PlayerConnectListener
@@ -61,11 +61,8 @@ class HaraldPlugin @Inject constructor(
         coroutineScope.launch {
             gertrudClient.getServerRegistrations().getOrElse { emptyArray() }.forEach {
                 logger.info("Registering server with identifier: ${it.identifier} of type ${it.serverType}")
-                val name = if (it.serverType == ServerType.LOBBY) "lobby-${it.identifier}" else it.identifier
-                val registration = server.registerServer(ServerInfo(name, InetSocketAddress(it.host, it.port)))
-                if (it.serverType == ServerType.LOBBY) {
-                    ChooseInitServerListener.lobbyServer.add(registration)
-                }
+                val name = "${it.serverType}-${it.identifier}"
+                server.registerServer(ServerInfo(name, InetSocketAddress(it.host, it.port)))
             }
         }
 
@@ -79,10 +76,17 @@ class HaraldPlugin @Inject constructor(
                 .build(),
             discordCommand()
         )
+        commandManager.register(
+            commandManager.metaBuilder("hub")
+                .aliases("l", "lobby")
+                .plugin(this)
+                .build(),
+            hubCommand(server)
+        )
 
         server.eventManager.register(this, ProxyPingListener(miniMessage, AppearanceConfig(dataDirectory)))
         server.eventManager.register(this, PlayerConnectListener())
-        server.eventManager.register(this, ChooseInitServerListener())
+        server.eventManager.register(this, ChooseInitServerListener(server))
 
     }
 

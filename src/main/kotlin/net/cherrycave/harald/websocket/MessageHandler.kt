@@ -3,7 +3,6 @@ package net.cherrycave.harald.websocket
 import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.proxy.server.ServerInfo
 import net.cherrycave.harald.listener.ChooseInitServerListener
-import net.cherrycave.harald.websocket.model.ServerType
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.JoinConfiguration
 import net.kyori.adventure.text.minimessage.MiniMessage
@@ -13,26 +12,38 @@ val miniMessage = MiniMessage.miniMessage()
 
 fun handleMessage(message: BaseMessage, proxyServer: ProxyServer) {
     when (message.payload) {
-        is SendRequest -> {}
+        is SendRequest -> {
+            println("got send request for ${message.payload.players.joinToString(", ") { it.toString() }} to servertype ${message.payload.server}")
+            val server = proxyServer.matchServer(message.payload.server).randomOrNull()
+
+            if (server == null) {
+                println("no server found for type ${message.payload.server}")
+                return
+            }
+
+            message.payload.players.forEach {
+                println("sending $it to ${server.serverInfo.name}")
+                proxyServer.getPlayer(it).ifPresent { player ->
+                    player.createConnectionRequest(server).fireAndForget()
+                }
+            }
+        }
+
         is RegisterServerRequest -> {
             val server = ServerInfo(
-                if (message.payload.serverType == ServerType.LOBBY) "lobby-" + message.payload.identifier else message.payload.identifier,
+                "${message.payload.serverType}-${message.payload.identifier}",
                 InetSocketAddress(message.payload.host, message.payload.port)
             )
             if (message.payload.register) {
                 println("Registering server ${server.name}")
-                val registeredServer = proxyServer.registerServer(server)
-                ChooseInitServerListener.lobbyServer.add(registeredServer)
+                proxyServer.registerServer(server)
             } else {
                 println("Unregistering server ${server.name}")
                 val registeredServer = proxyServer.allServers.find {
                     it.serverInfo.name == server.name
                 }
-                ChooseInitServerListener.lobbyServer.removeIf {
-                    it.serverInfo.name == server.name
-                }
                 registeredServer?.playersConnected?.forEach {
-                    val otherLobby = ChooseInitServerListener.lobbyServer.randomOrNull()
+                    val otherLobby = proxyServer.matchServer("lobby").randomOrNull()
                     if (otherLobby == null) {
                         it.disconnect(
                             Component.join(
